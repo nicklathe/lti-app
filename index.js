@@ -9,6 +9,8 @@ const host = '0.0.0.0';
 const port = 3000;
 const dbFile = './lti-db.json';
 
+// NOTE: update this to the value created when setting up the Developer Key in Canvas
+const client_id = '10000000000001';
 const canvasBaseURI = 'http://canvas.docker';
 
 function launchHandler(req, res) {
@@ -38,7 +40,7 @@ function launchHandler(req, res) {
   const authRequestBody = {
     scope: 'openid',
     response_type: 'id_token',
-    client_id: '10000000000001', // value from Canvas
+    client_id: client_id,
     redirect_uri: redirectURI,
     login_hint: req.body.login_hint,
     lti_message_hint: req.body.lti_message_hint ? req.body.lti_message_hint : '', // TEMP: probably remove this, but see if Canvas is sending this
