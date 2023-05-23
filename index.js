@@ -116,6 +116,31 @@ app.get('/target', (req, res) => {
   <body>
     <h1>Welcome, ${jwtBody.name}!</h1>
     <h2>This is the LTI Test App (but pretend it's studio.code.org)</h2>
+    <p>
+      Link to <a href="/target-two">target two</a>.
+    </p>
+  </body>
+</html>
+`;
+
+  res.send(landingPage);
+});
+
+app.get('/target-two', (req, res) => {
+  const landingPage = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        background-color: red;
+      }
+      h1 {text-align: center;}
+      h2 {text-align: center;}
+    </style>
+  </head>
+  <body>
+    <h1>Target Two</h1>
   </body>
 </html>
 `;
