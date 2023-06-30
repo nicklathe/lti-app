@@ -1,10 +1,14 @@
 'use strict';
 
-const fs = require('fs');
-const express = require('express');
+import { get } from 'axios';
+import express, { json, urlencoded } from 'express';
+import { writeFile, readFileSync } from 'fs';
+import { verify } from 'jsonwebtoken';
+import { jwk2pem as _jwk2pem } from 'pem-jwk';
+const jwk2pem = _jwk2pem;
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(json());
+app.use(urlencoded({ extended: true }));
 const host = '0.0.0.0';
 const port = 3000;
 const dbFile = './lti-db.json';
@@ -26,7 +30,7 @@ function launchHandler(req, res) {
     target_link_uri: req.body.target_link_uri,
   };
   // Write to dbFile
-  fs.writeFile(dbFile, JSON.stringify(fileContent), (err) => {
+  writeFile(dbFile, JSON.stringify(fileContent), (err) => {
     if (err) {
       console.error(err);
     }
@@ -57,21 +61,30 @@ function launchHandler(req, res) {
   res.redirect(`${canvasAuthURI}?${params}`);
 }
 
-function authenticateHandler(req, res) {
+async function authenticateHandler(req, res) {
   console.log(`Auth Response Body (from Canvas LMS): ${JSON.stringify(req.body)}\n`);
+  console.log(`Cookies: ${JSON.stringify(req.cookies)}`);
+  console.log(`State: ${req.body.state}`);
 
   // grab id_token out of request
-  const jwt = req.body.id_token;
+  const id_token = req.body.id_token;
   // read dbFile, update with JWT value, and write back
-  const fileData = fs.readFileSync(dbFile);
+  const fileData = readFileSync(dbFile);
   const fileContent = JSON.parse(fileData);
-  fileContent.jwt = jwt;
+  fileContent.jwt = id_token;
 
-  fs.writeFile(dbFile, JSON.stringify(fileContent), (err) => {
+  writeFile(dbFile, JSON.stringify(fileContent), (err) => {
     if (err) {
       console.error(err);
     }
   });
+
+  const parts = id_token.split('.');
+  const jwtPayloadHeader = JSON.parse(Buffer.from(parts[0], 'base64').toString());
+  const jwtPayloadBody = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+  const response = await get('http://canvas.docker/api/lti/security/jwks');
+  const key = response.data.keys.find((k) => k.kid === jwtPayloadHeader['kid']);
+  verify(id_token, jwk2pem(key));
 
   // redirect to final requested URI that was part of initial launch request
   res.redirect(fileContent.target_link_uri);
@@ -97,7 +110,7 @@ app.post('/oidc/authenticate', (req, res) => {
 
 // Mock final URI, this would be the landing page of studio.code.org or something
 app.get('/target', (req, res) => {
-  const fileData = fs.readFileSync(dbFile);
+  const fileData = readFileSync(dbFile);
   const fileContent = JSON.parse(fileData);
   const jwtBody = JSON.parse(Buffer.from(fileContent.jwt.split('.')[1], 'base64').toString());
 
