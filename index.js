@@ -15,7 +15,7 @@ const port = 3000;
 const dbFile = './lti-db.json';
 
 // NOTE: update this to the value created when setting up the Developer Key in Canvas
-const client_id = '10000000000002';
+const client_id = '10000000000001';
 const canvasBaseURI = 'http://canvas.docker';
 
 function launchHandler(req, res) {
