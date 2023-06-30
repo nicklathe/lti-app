@@ -1,7 +1,6 @@
 'use strict';
 
 import { get } from 'axios';
-import cookieParser from 'cookie-parser';
 import express, { json, urlencoded } from 'express';
 import { writeFile, readFileSync } from 'fs';
 import { verify } from 'jsonwebtoken';
